@@ -1,9 +1,10 @@
-var socket = io.connect('http://localhost:8080', {'forceNew': true});
+var socket = io.connect('http://10.41.5.195:9090', {'forceNew': true});
+var sessionId = -1;
 
 socket.on('messages', function (data) {
-    console.log(data);
+    sessionId = socket.io.engine.id;
     render(data);
-    sendNotification();
+    sendNotification(data[data.length - 1]);
 });
 
 function render(data) {
@@ -17,11 +18,15 @@ function render(data) {
     document.getElementById('messages').innerHTML = html;
 }
 
-function sendNotification() {
+function sendNotification(data) {
+    if (data.id === sessionId) {
+        console.log("own message " + sessionId);
+        return;
+    }
     var notification = null;
-    var title = "CV notif";
+    var title = data.author;
     var options = {
-        body: "theBody",
+        body: data.text,
         icon: "images/me.jpg"
     };
     if (!("Notification" in window)) {
@@ -39,10 +44,10 @@ function sendNotification() {
     }
 
     notification.onclick = function () {
-        alert("clik over me again");
+        //alert("clik over me again");
     };
     notification.onclose = function () {
-        alert("why did you dimiss me!!!!");
+        //alert("why did you dimiss me!!!!");
     };
 }
 ;
@@ -50,7 +55,8 @@ function sendNotification() {
 function addMessage(e) {
     var message = {
         author: document.getElementById('username').value,
-        text: document.getElementById('texto').value
+        text: document.getElementById('texto').value,
+        id: socket.io.engine.id
     };
 
     socket.emit('new-message', message);
